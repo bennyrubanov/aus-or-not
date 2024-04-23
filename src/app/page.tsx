@@ -8,6 +8,12 @@ const LocationChecker = () => {
     const [isInAustralia, setIsInAustralia] = useState(false);
     const [checkingLocation, setCheckingLocation] = useState(false);
 
+    useEffect(() => {
+        if (location) {
+            checkIfInAustralia(location.latitude, location.longitude);
+        }
+    }, [location]); // Re-run this effect if location changes
+
     const getLocation = () => {
         if (navigator.geolocation) {
             setCheckingLocation(true);
@@ -20,8 +26,6 @@ const LocationChecker = () => {
     const showPosition = (position: GeolocationPosition) => {
         const { latitude, longitude } = position.coords;
         setLocation({ latitude, longitude });
-        checkIfInAustralia(latitude, longitude);
-        setCheckingLocation(false);
     };
 
     const showError = (error: GeolocationPositionError) => {
@@ -43,15 +47,19 @@ const LocationChecker = () => {
     };
 
     const checkIfInAustralia = async (lat: number, lon: number) => {
-        const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
-        const response = await fetch(url, {
-            headers: {
-                'User-Agent': 'aus-or-not'
-            }
-        });
-        const data = await response.json();
-        const country = data.address?.country;
-        setIsInAustralia(country === "Australia");
+        try {
+            const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
+            const response = await fetch(url, {
+                headers: {
+                    'User-Agent': 'aus-or-not'
+                }
+            });
+            const data = await response.json();
+            const country = data.address?.country;
+            setIsInAustralia(country === "Australia");
+        } finally {
+            setCheckingLocation(false);
+        }
     };
 
     return (
